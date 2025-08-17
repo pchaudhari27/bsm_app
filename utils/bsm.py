@@ -32,18 +32,29 @@ def bsm_model(
     nd2s = sp.stats.norm.cdf(d2s) * np.exp(-risk_free_rate * time_to_maturity)
 
     # need to make indices line up correctly
-    calls = nd1s * spots.reshape(-1, 1) - nd2s * strikes
+    calls = np.round(nd1s * spots.reshape(-1, 1) - nd2s * strikes, 2)
 
     # use put call parity
-    puts = (
-        calls
-        - spots.reshape(-1, 1)
-        + np.exp(-risk_free_rate * time_to_maturity) * strikes
+    puts = np.round(
+        (
+            calls
+            - spots.reshape(-1, 1)
+            + np.exp(-risk_free_rate * time_to_maturity) * strikes
+        ),
+        2,
     )
 
     return (
-        pd.DataFrame(calls, index=spots, columns=strikes),
-        pd.DataFrame(puts, index=spots, columns=strikes),
+        pd.DataFrame(
+            calls,
+            index=pd.Index(np.round(spots, 2), name="Spot Price"),
+            columns=pd.Index(np.round(strikes, 2), name="Strike Price"),
+        ),
+        pd.DataFrame(
+            puts,
+            index=pd.Index(np.round(spots, 2), name="Spot Price"),
+            columns=pd.Index(np.round(strikes, 2), name="Strike Price"),
+        ),
     )
 
 
@@ -92,6 +103,7 @@ if __name__ == "__main__":
 
     args, unknown_args = parser.parse_known_args()
 
+    # basic checks for healthy arg parameters given
     try:
         assert (
             args.output_names[0][-4:] == ".csv" and args.output_names[1][-4:] == ".csv"
