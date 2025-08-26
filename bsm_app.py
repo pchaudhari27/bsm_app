@@ -5,8 +5,11 @@ import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-from utils.bsm import bsm_model
-from utils.colors import cmaps, option_norm
+from utils import bsm_model, cmaps, option_norm
+
+st.set_page_config(
+    page_title="BSM - Manual Inputs",
+)
 
 SESSION_DEFAULTS = {
     "spot": 10.0,
@@ -20,6 +23,13 @@ SESSION_DEFAULTS = {
     "put_price": None,
     "chosen_palette": "Red-Blue",
     "day_count_convention": 360,
+    "last_vals": {
+        "spot": 10.0,
+        "strike": 10.0,
+        "rfr": 10.0,
+        "sigma": 30.0,
+        "tau": 1.0,
+    },
 }
 
 for key in SESSION_DEFAULTS:
@@ -155,27 +165,12 @@ def sidebar_inputs(
     sigma /= 100
     tau /= units_divider
 
-    try:
-        last_vals = pd.read_csv("last_vals.csv")
-    except FileNotFoundError:
-        last_vals = pd.DataFrame(
-            {
-                "strike": [-1],
-                "spot": [-1],
-                "rfr": [-1],
-                "sigma": [-1],
-                "tau": [-1],
-            }
-        )
-    except Exception as e:
-        raise e
-
     if (
-        spot != last_vals.loc[0, "spot"]
-        or strike != last_vals.loc[0, "strike"]
-        or rfr != last_vals.loc[0, "rfr"]
-        or sigma != last_vals.loc[0, "sigma"]
-        or tau != last_vals.loc[0, "tau"]
+        spot != st.session_state.last_vals["spot"]
+        or strike != st.session_state.last_vals["strike"]
+        or rfr != st.session_state.last_vals["rfr"]
+        or sigma != st.session_state.last_vals["sigma"]
+        or tau != st.session_state.last_vals["tau"]
     ):
         reset_call_and_put_state()
 
@@ -295,15 +290,13 @@ def main_app():
         sidebar_inputs()
     )
 
-    pd.DataFrame(
-        {
-            "strike": [strike],
-            "spot": [spot],
-            "rfr": [rfr],
-            "sigma": [sigma],
-            "tau": [tau],
-        }
-    ).to_csv("last_vals.csv")
+    st.session_state.last_vals = {
+        "strike": strike,
+        "spot": spot,
+        "rfr": rfr,
+        "sigma": sigma,
+        "tau": tau,
+    }
 
     if palette == "Red-Green":
         st.markdown(
